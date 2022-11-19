@@ -49,7 +49,7 @@
   ; `Positive` and `+` will result in a POSITIVE assertion
   ; `Negative` and `-` will result in a NEGATIVE assertion
   (bind ?response (AskQuestion ?question positive negative + -))
-  (if or (eq ?response positive) (eq ?response +)
+  (if (or (eq ?response positive) (eq ?response +))
     then positive
     else negative
   )  
@@ -72,64 +72,86 @@
 (defrule isAntiHDV
   (HBsAg positive)
   =>
-  (printout t "anti-HDV [positive/negative]? ")
-  (assert (antiHDV (read)))
+  (assert (antiHDV (extractResults "anti-HDV [positive/negative]? ")))
 )
 
 (defrule isAntiHBs
-  (or
-    (HBsAg negative)
-    (and
-      (antiHBc positive)
-      (antiHDV negative)
-      (HBsAg positive)
-    )
+  (or (HBsAg negative)
+    (and (antiHBc positive) (antiHDV negative) (HBsAg positive))
   )
   =>
-  (printout t "anti-HBs [positive/negative]? ")
-  (assert (antiHBs (read)))
+  (assert (antiHBs (extractResults "anti-HBs [positive/negative]? ")))
 )
 
 (defrule isAntiHBc
-  (or
-    (antiHDV negative)
-    (HBsAg negative)
+  (or (antiHDV negative) (HBsAg negative)
   )
   =>
-  (printout t "anti-HBc [positive/negative]? ")
-  (assert (antiHBc (read)))
+  (assert (antiHBc (extractResults "anti-HBc [positive/negative]? ")))
 )
 
 (defrule isIgMAntiHBc
-  (and
-    (antiHBs negative)
-    (antiHBc positive)
-    (antiHDV negative)
-    (HBsAg positive)
+  (and (antiHBs negative) (antiHBc positive) (antiHDV negative) (HBsAg positive)
   )
   =>
-  (printout t "IgM anti-HBc [positive/negative]? ")
-  (assert (IgMAntiHBc (read)))
+  (assert (IgMAntiHBc (extractResults "IgM anti-HBc [positive/negative]? ")))
 )
 
-;--------------------------
+; The following rules are the leaf nodes of the tree as results of the diagnosis
 (defrule predHepBD
-  (and 
-    (HBsAg positive)
-    (antiHDV positive)
+  (and (HBsAg positive) (antiHDV positive)
   )
   =>
   (printout t crlf "Hasil Prediksi = Hepatitis B+D" crlf crlf)
 )
 
 (defrule predCured
-  (and 
-    (antiHBc positive)
-    (antiHBs positive)
-    (HBsAg negative)
+  (and (antiHBc positive) (antiHBs positive) (HBsAg negative)
   )
   =>
   (printout t crlf "Hasil Prediksi = Cured" crlf crlf)
 )
 
-; TOOO: add more prediction rules
+(defrule vaccinated
+  (and (antiHBc negative) (antiHBs positive) (HBsAg negative)
+  )
+  =>
+  (printout t crlf "Hasil Prediksi = Vaccinated" crlf crlf)
+)
+
+(defrule unclearPossibleResolved
+  (and (antiHBc positive) (antiHBs negative) (HBsAg negative)
+  )
+  =>
+  (printout t crlf "Hasil Prediksi = Unclear (Possible Resolved)" crlf crlf)
+)
+
+(defrule healthyOrSus
+  (and (antiHBc negative) (antiHBs negative) (HBsAg negative)
+  )
+  =>
+  (printout t crlf "Hasil Prediksi = Healthy Not Vaccinated or Suspicious" crlf crlf)
+)
+
+(defrule uncertainConfig
+  (or
+    (and (antiHBc negative) (antiHDV negative) (HBsAg positive))
+    (and (antiHBs positive) (antiHBc positive) (antiHDV negative) (HBsAg positive))
+  )
+  =>
+  (printout t crlf "Hasil Prediksi = Uncertain Configuration" crlf crlf)
+)
+
+(defrule acuteInfection
+  (and (IgMAntiHBc positive) (antiHBc positive) (antiHBs negative) (antiHDV negative) (HBsAg positive)
+  )
+  =>
+  (printout t crlf "Hasil Prediksi = Acute Infection" crlf crlf)
+)
+
+(defrule chronicInfection
+  (and (IgMAntiHBc negative) (antiHBc positive) (antiHBs negative) (antiHDV negative) (HBsAg positive)
+  )
+  =>
+  (printout t crlf "Hasil Prediksi = Chronic Infection" crlf crlf)
+)
