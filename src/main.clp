@@ -19,18 +19,20 @@
 ; DEFINING FUNCTIONS
 ; To avoid redundancy in asking for user's inputs, we create a function template by using deffunction
 
-; This function accepts two inputs: the question in particular and the allowed inputs from the user
+; This function accepts two inputs: the question in particular, and the allowed inputs from the user
 ; Note the `$` sign in front of the `allowed-inputs` variable. This is a multifield wildcard since it accepts multiple inputs
 
 (deffunction AskQuestion (?question $?allowed-inputs) 
   (printout t ?question) ; Prints the question to the default output device (denoted by the `t`), which is the terminal in most cases
   (bind ?answer (read)) ; Asks the user for an input and binds it into a variable named `answer`
+
   ; lexemep is a function that checks if the argument is a string or a symbol. Returns TRUE if yes
   ; If the lexemep checks out, then set the answer to lowercase to avoid false negative by difference in upper/lower cases
   (while (not (lexemep ?answer)) do 
     (bind ?answer (read)))
   (if (lexemep ?answer)
     then (bind ?answer (lowcase ?answer)))
+
   ; The following code checks whether the answer is within accepted results. If yes, it returns the result. If not, it asks the question again
   (while (not (member$ ?answer ?allowed-inputs)) do 
     (printout t ?question)
@@ -84,7 +86,8 @@
 )
 
 (defrule isAntiHBc
-  (or (antiHDV negative) (HBsAg negative)
+  (or (and (antiHDV negative) (HBsAg positive))
+    (and (or (antiHBs positive) (antiHBs negative)) (HBsAg negative))
   )
   =>
   (assert (antiHBc (extractResults "anti-HBc [positive/negative]? ")))
@@ -96,6 +99,8 @@
   =>
   (assert (IgMAntiHBc (extractResults "IgM anti-HBc [positive/negative]? ")))
 )
+
+
 
 ; The following rules are the leaf nodes of the tree as results of the diagnosis
 (defrule predHepBD
